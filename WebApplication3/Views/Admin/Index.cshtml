@@ -1,0 +1,122 @@
+﻿@model InventoryInvoiceApp.Models.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div>
+            <h1>Admin Dashboard</h1>
+
+            <p>
+                Manage users and access all inventory functions.
+            </p>
+        </div>
+
+        <span class="role-badge">
+            Admin
+        </span>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="action-cards">
+        <a asp-controller="Admin"
+           asp-action="CreateUser"
+           class="action-card">
+
+            <strong>Create User</strong>
+
+            <span>
+                Add Warehouse or Cashier account
+            </span>
+        </a>
+
+        <a asp-controller="Warehouse"
+           asp-action="Index"
+           class="action-card">
+
+            <strong>Warehouse</strong>
+
+            <span>
+                Add providers and increase stock
+            </span>
+        </a>
+
+        <a asp-controller="Cashier"
+           asp-action="Index"
+           class="action-card">
+
+            <strong>Cashier</strong>
+
+            <span>
+                Sell materials and decrease stock
+            </span>
+        </a>
+
+        <a asp-controller="Admin"
+           asp-action="StockMovements"
+           class="action-card">
+
+            <strong>Stock Movements</strong>
+
+            <span>
+                View all stock increases and decreases
+            </span>
+        </a>
+    </div>
+
+    <h2 class="table-title">
+        System Users
+    </h2>
+
+    @if (Model.Users.Count == 0)
+    {
+        <div class="alert alert-info">
+            No users were found.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td>
+                                @user.Username
+                            </td>
+
+                            <td>
+                                @user.Email
+                            </td>
+
+                            <td>
+                                <span class="user-role">
+                                    @user.Role
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<partial name="_AdminStyle" />

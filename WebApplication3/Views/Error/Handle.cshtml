@@ -1,0 +1,99 @@
+﻿@{
+    ViewData["Title"] = ViewBag.Title;
+}
+
+<div class="error-page">
+    <div class="error-code">
+        @ViewBag.StatusCode
+    </div>
+
+    <h1>@ViewBag.Title</h1>
+
+    <p>@ViewBag.Message</p>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-controller="Admin"
+               asp-action="Index"
+               class="return-button">
+                Return to Admin Dashboard
+            </a>
+        }
+        else if (User.IsInRole("Warehouse"))
+        {
+            <a asp-controller="Warehouse"
+               asp-action="Index"
+               class="return-button">
+                Return to Warehouse
+            </a>
+        }
+        else if (User.IsInRole("Cashier"))
+        {
+            <a asp-controller="Cashier"
+               asp-action="Index"
+               class="return-button">
+                Return to Cashier
+            </a>
+        }
+    }
+    else
+    {
+        <a asp-controller="Account"
+           asp-action="Login"
+           class="return-button">
+            Return to Login
+        </a>
+    }
+</div>
+
+<style>
+    body {
+        background: #f3f6fa;
+    }
+
+    .error-page {
+        max-width: 620px;
+        margin: 70px auto;
+        padding: 45px;
+        border: 1px solid #dce3ed;
+        border-radius: 18px;
+        background: white;
+        text-align: center;
+        box-shadow: 0 12px 35px rgba(30, 50, 80, 0.1);
+    }
+
+    .error-code {
+        color: #315bd6;
+        font-size: 90px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .error-page h1 {
+        margin: 16px 0 10px;
+        color: #263b5e;
+    }
+
+    .error-page p {
+        margin-bottom: 28px;
+        color: #6e7b90;
+        font-size: 18px;
+    }
+
+    .return-button {
+        display: inline-block;
+        padding: 12px 21px;
+        border-radius: 9px;
+        background: #315bd6;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+        .return-button:hover {
+            background: #2449bd;
+            color: white;
+        }
+</style>

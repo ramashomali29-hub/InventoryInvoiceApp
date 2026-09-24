@@ -1,0 +1,290 @@
+﻿@model InventoryInvoiceApp.Models.CashierViewModel
+
+@{
+    ViewData["Title"] = "Cashier";
+}
+
+<div class="cashier-page">
+    <div class="page-header">
+        <div>
+            <h1>Cashier Sale</h1>
+
+            <p>
+                Select materials and complete the sale.
+            </p>
+        </div>
+
+        <span>Cashier</span>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <form asp-controller="Cashier"
+          asp-action="CompleteSale"
+          method="post">
+
+        <div asp-validation-summary="ModelOnly"
+             class="alert alert-danger">
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="alert alert-warning">
+                No materials are currently available.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table sale-table">
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th>Available</th>
+                            <th>Price</th>
+                            <th>Sell Quantity</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (
+                            int i = 0;
+                            i < Model.Items.Count;
+                            i++)
+                        {
+                            <tr class="sale-row">
+                                <td>
+                                    <input asp-for="Items[i].MaterialId"
+                                           type="hidden" />
+
+                                    <input asp-for="Items[i].MaterialName"
+                                           type="hidden" />
+
+                                    <strong>
+                                        @Model.Items[i].MaterialName
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <span class="available">
+                                        @Model.Items[i].AvailableQuantity
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <input asp-for="Items[i].Price"
+                                           type="hidden"
+                                           class="item-price" />
+
+                                    @Model.Items[i].Price.ToString("0.00")
+                                    JOD
+                                </td>
+
+                                <td>
+                                    <div class="quantity-control">
+                                        <button type="button"
+                                                class="quantity-button"
+                                                onclick="changeQuantity(this, -1)">
+                                            −
+                                        </button>
+
+                                        <input asp-for="Items[i].SellQuantity"
+                                               type="number"
+                                               min="0"
+                                               max="@Model.Items[i].AvailableQuantity"
+                                               class="quantity-input"
+                                               readonly />
+
+                                        <button type="button"
+                                                class="quantity-button"
+                                                onclick="changeQuantity(this, 1)">
+                                            +
+                                        </button>
+                                    </div>
+                                </td>
+
+                                <td class="line-total">
+                                    0.00 JOD
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="checkout-area">
+                <div class="grand-total">
+                    Grand Total:
+                    <span id="grandTotal">0.00</span>
+                    JOD
+                </div>
+
+                <button type="submit"
+                        class="complete-button">
+                    Complete Sale
+                </button>
+            </div>
+        }
+    </form>
+</div>
+
+<style>
+    body {
+        background: #f6f4f1;
+    }
+
+    .cashier-page {
+        max-width: 1100px;
+        margin: 35px auto;
+        padding: 32px;
+        border: 1px solid #e4ddd3;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 0 10px 30px rgba(80, 55, 30, 0.08);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #ebe3da;
+    }
+
+        .page-header h1 {
+            color: #5c412d;
+        }
+
+        .page-header p {
+            color: #817468;
+        }
+
+        .page-header > span {
+            padding: 8px 14px;
+            border-radius: 20px;
+            background: #fff0d9;
+            color: #a15c19;
+            font-weight: bold;
+        }
+
+    .sale-table {
+        margin-top: 25px;
+    }
+
+        .sale-table thead {
+            background: #5c412d;
+            color: white;
+        }
+
+        .sale-table th,
+        .sale-table td {
+            padding: 14px;
+            vertical-align: middle;
+        }
+
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .quantity-button {
+        width: 34px;
+        height: 34px;
+        border: none;
+        border-radius: 7px;
+        background: #5c412d;
+        color: white;
+        font-size: 20px;
+    }
+
+    .quantity-input {
+        width: 55px;
+        padding: 6px;
+        border: 1px solid #d7c9bd;
+        border-radius: 7px;
+        text-align: center;
+    }
+
+    .checkout-area {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid #eee4db;
+    }
+
+    .grand-total {
+        color: #5c412d;
+        font-size: 23px;
+        font-weight: bold;
+    }
+
+    .complete-button {
+        padding: 13px 23px;
+        border: none;
+        border-radius: 9px;
+        background: #b66a22;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    function changeQuantity(button, change) {
+        const row = button.closest(".sale-row");
+        const input = row.querySelector(".quantity-input");
+        const available = parseInt(
+            row.querySelector(".available").textContent
+        );
+
+        let quantity = parseInt(input.value) || 0;
+        quantity += change;
+
+        if (quantity < 0) {
+            quantity = 0;
+        }
+
+        if (quantity > available) {
+            quantity = available;
+        }
+
+        input.value = quantity;
+        calculateTotals();
+    }
+
+    function calculateTotals() {
+        let grandTotal = 0;
+
+        document.querySelectorAll(".sale-row")
+            .forEach(row => {
+                const price = parseFloat(
+                    row.querySelector(".item-price").value
+                ) || 0;
+
+                const quantity = parseInt(
+                    row.querySelector(".quantity-input").value
+                ) || 0;
+
+                const total = price * quantity;
+                grandTotal += total;
+
+                row.querySelector(".line-total").textContent =
+                    total.toFixed(2) + " JOD";
+            });
+
+        document.getElementById("grandTotal").textContent =
+            grandTotal.toFixed(2);
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        calculateTotals);
+</script>
