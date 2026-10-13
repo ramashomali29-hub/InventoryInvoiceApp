@@ -101,7 +101,7 @@ app.Use(async (context, next) =>
     headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     headers.Append("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
 
-    // 'unsafe-inline' is kept for script-src/style-src because some views
+    // 'unsafe-inline' is kept for style-src only, because some views
     // (e.g. Views/Cashier/Index.cshtml) use inline <script>/<style> blocks.
     // Tightening this to a per-request nonce is a good follow-up hardening
     // task, tracked separately — see report Section "Recommendations".
@@ -109,7 +109,7 @@ app.Use(async (context, next) =>
         "Content-Security-Policy",
         "default-src 'self'; " +
         "frame-ancestors 'none'; " +
-        "script-src 'self' 'unsafe-inline'; " +
+        "script-src 'self'; "  +
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data:; " +
         "object-src 'none'");

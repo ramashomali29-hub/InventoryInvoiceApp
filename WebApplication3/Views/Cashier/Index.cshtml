@@ -90,7 +90,7 @@
                                     <div class="quantity-control">
                                         <button type="button"
                                                 class="quantity-button"
-                                                onclick="changeQuantity(this, -1)">
+                                                data-change="-1">
                                             −
                                         </button>
 
@@ -103,7 +103,7 @@
 
                                         <button type="button"
                                                 class="quantity-button"
-                                                onclick="changeQuantity(this, 1)">
+                                                data-change="1">
                                             +
                                         </button>
                                     </div>
@@ -237,54 +237,6 @@
     }
 </style>
 
-<script>
-    function changeQuantity(button, change) {
-        const row = button.closest(".sale-row");
-        const input = row.querySelector(".quantity-input");
-        const available = parseInt(
-            row.querySelector(".available").textContent
-        );
-
-        let quantity = parseInt(input.value) || 0;
-        quantity += change;
-
-        if (quantity < 0) {
-            quantity = 0;
-        }
-
-        if (quantity > available) {
-            quantity = available;
-        }
-
-        input.value = quantity;
-        calculateTotals();
-    }
-
-    function calculateTotals() {
-        let grandTotal = 0;
-
-        document.querySelectorAll(".sale-row")
-            .forEach(row => {
-                const price = parseFloat(
-                    row.querySelector(".item-price").value
-                ) || 0;
-
-                const quantity = parseInt(
-                    row.querySelector(".quantity-input").value
-                ) || 0;
-
-                const total = price * quantity;
-                grandTotal += total;
-
-                row.querySelector(".line-total").textContent =
-                    total.toFixed(2) + " JOD";
-            });
-
-        document.getElementById("grandTotal").textContent =
-            grandTotal.toFixed(2);
-    }
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        calculateTotals);
-</script>
+@section Scripts {
+    <script src="~/js/cashier.js" asp-append-version="true"></script>
+}
