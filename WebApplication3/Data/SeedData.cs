@@ -57,7 +57,7 @@ namespace InventoryInvoiceApp.Data
                 string.IsNullOrWhiteSpace(adminPassword))
             {
                 throw new InvalidOperationException(
-                    "Admin credentials are missing from User Secrets.");
+                     "Admin credentials (SeedAdmin) are missing from configuration.");
             }
 
             var admin =
