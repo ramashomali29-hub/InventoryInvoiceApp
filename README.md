@@ -15,7 +15,8 @@ An inventory and invoice management system built with ASP.NET Core MVC, Entity F
 
 - ASP.NET Core MVC (C#)
 - Entity Framework Core
-- SQL Server 2022 (running in Docker)
+- SQL Server 2022
+- Docker and Docker Compose
 - ASP.NET Core Identity
 - HTML, CSS, JavaScript, Bootstrap
 
@@ -34,44 +35,83 @@ This project was built and reviewed with security in mind:
 | Encryption in transit | Encrypted connection between the app and the database (`Encrypt=True`). |
 | Encryption at rest | Transparent Data Encryption (TDE, AES-256) enabled on the database. |
 | Secrets management | No credentials in the base `appsettings.json`; local demo values live only in `appsettings.Development.json`. |
-| Network exposure | The database container port is bound to `127.0.0.1` only. |
+| Network exposure | The database is reachable only inside the Docker network; the web app is published on `127.0.0.1` only. |
 
-## Getting Started (Local)
+## Quick Start (Docker only)
 
-### Prerequisites
+The only thing you need is **[Docker Desktop](https://www.docker.com/products/docker-desktop/)**. No source code, .NET SDK, Visual Studio, or SQL Server installation required.
 
-- [.NET SDK](https://dotnet.microsoft.com/download)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- Visual Studio (or the `dotnet ef` CLI tools)
+### 1. Install and open Docker Desktop
 
-### 1. Start the database container
+Install Docker Desktop, open it, and wait until it shows **Engine running**.
+
+### 2. Download the compose file
+
+Create an empty folder (for example `C:\inventory-app`), open a terminal inside it, and run:
+
+```powershell
+curl.exe -O https://raw.githubusercontent.com/ramashomali29-hub/InventoryInvoiceApp/master/docker-compose.hub.yml
+```
+
+Or open [`docker-compose.hub.yml`](docker-compose.hub.yml) on GitHub, click **Download raw file**, and save it in that folder.
+
+### 3. Start the application
+
+In the same folder, run:
 
 ```bash
-docker run -d --name mydb -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Test@12345" -p 127.0.0.1:1433:1433 -v sqldata:/var/opt/mssql mcr.microsoft.com/mssql/server:2022-latest
+docker compose -f docker-compose.hub.yml up -d
 ```
 
-Wait about a minute for SQL Server to start.
+The first run downloads the images and sets up the database, so it can take a few minutes.
 
-### 2. Create the database and tables
+### 4. Check that everything started
 
-Run the migrations **using the admin (sa) account**, because the app account is not allowed to change the database schema. In Visual Studio's Package Manager Console:
-
-```powershell
-Update-Database -Connection "Server=localhost,1433;Database=InventoryInvoiceDatabase;User Id=sa;Password=Test@12345;TrustServerCertificate=True"
+```bash
+docker compose -f docker-compose.hub.yml ps -a
 ```
 
-### 3. Apply the database security setup
+You should see:
 
-Creates the least-privilege app account and enables TDE encryption. From the repository root:
+- `db` — **Up (healthy)**
+- `db-init` — **Exited (0)** (the one-time setup finished successfully)
+- `web` — **Up**
 
-```powershell
-docker cp database\security-setup.sql mydb:/tmp/security-setup.sql
-docker exec -it mydb /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test@12345" -C -i /tmp/security-setup.sql
+### 5. Open the app
+
+Go to **http://localhost:8080** and log in with the [demo account](#demo-login).
+
+### Stop / reset
+
+```bash
+# Stop the app (data is kept)
+docker compose -f docker-compose.hub.yml down
+
+# Stop and delete all data
+docker compose -f docker-compose.hub.yml down -v
 ```
 
-### 4. Run the app
+### Troubleshooting
 
-Open the solution in Visual Studio and run it with the `https` profile.
+- **`port is already allocated`** — another program is using port 8080. Stop it, or edit `docker-compose.hub.yml` and change `"127.0.0.1:8080:8080"` to another port such as `"127.0.0.1:8090:8080"`, then open http://localhost:8090.
+- **The page does not open** — view the logs with `docker compose -f docker-compose.hub.yml logs web` and `docker compose -f docker-compose.hub.yml logs db-init`.
+- **Start fresh** — run `docker compose -f docker-compose.hub.yml down -v`, then `up -d` again.
+
+### What runs
+
+| Container | Image | Purpose |
+|-----------|-------|---------|
+| `db` | `mcr.microsoft.com/mssql/server:2022-latest` | SQL Server 2022 database (not exposed to the host) |
+| `db-init` | `ramaalshomali/inventoryinvoiceapp-dbinit` | One-time job: creates the database, tables, least-privilege login, and TDE encryption, then exits |
+| `web` | `ramaalshomali/inventoryinvoiceapp-web` | The ASP.NET Core application, connecting with the least-privilege account |
+
+### Build from source (optional)
+
+To build the images yourself instead of downloading them, clone the repository and run from its root:
+
+```bash
+docker compose up -d --build
+```
 
 ## Demo Login
 
@@ -86,7 +126,12 @@ Log in as Admin to create Warehouse and Cashier users.
 
 ```
 InventoryInvoiceApp/
+├── docker-compose.hub.yml      # Run the app from Docker Hub images
+├── docker-compose.yml          # Build and run the app from source
 ├── database/
+│   ├── Dockerfile              # Image for the one-time database setup job
+│   ├── 00-create-database.sql  # Creates the database
+│   ├── 01-schema.sql           # Tables (generated from EF Core migrations)
 │   └── security-setup.sql      # Least-privilege account + TDE encryption
 └── WebApplication3/
     ├── Controllers/            # Account, Admin, Warehouse, Cashier
