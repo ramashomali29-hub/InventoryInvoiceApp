@@ -1,0 +1,56 @@
+# Runs the whole app with Docker only: database + one-time setup + web app.
+# Usage:  docker compose up -d --build     then open http://localhost:8080
+# All passwords are DEMO values for local use only (override them with a .env file).
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:-Test@12345}"
+    volumes:
+      - sqldata:/var/opt/mssql
+    # No ports published: the database is reachable only by the other containers.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  db-init:
+    # One-time job: creates the database, tables, least-privilege login and TDE, then exits.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SA_PASSWORD: "${SA_PASSWORD:-Test@12345}"
+    volumes:
+      - ./database:/scripts:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command: |
+      set -e
+      SQL="/opt/mssql-tools18/bin/sqlcmd -S db -U sa -P $$SA_PASSWORD -C -b -I"
+      $$SQL -i /scripts/00-create-database.sql
+      $$SQL -d InventoryInvoiceDatabase -i /scripts/01-schema.sql
+      $$SQL -i /scripts/security-setup.sql
+      echo "Database setup complete."
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      dockerfile: WebApplication3/Dockerfile
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # The app connects with the least-privilege account, never with sa.
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=InventoryInvoiceDatabase;User Id=inventory_app;Password=${APP_DB_PASSWORD:-AppUser@2026};Encrypt=True;TrustServerCertificate=True"
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  sqldata:

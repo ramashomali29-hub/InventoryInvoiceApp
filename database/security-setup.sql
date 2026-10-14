@@ -50,7 +50,8 @@ IF NOT EXISTS (SELECT 1 FROM sys.dm_database_encryption_keys WHERE database_id =
     ENCRYPTION BY SERVER CERTIFICATE TDE_Cert;
 GO
 
-ALTER DATABASE InventoryInvoiceDatabase SET ENCRYPTION ON;
+IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name = 'InventoryInvoiceDatabase' AND is_encrypted = 1)
+    ALTER DATABASE InventoryInvoiceDatabase SET ENCRYPTION ON;
 GO
 
 /* ---------- 3. Verification ---------- */
